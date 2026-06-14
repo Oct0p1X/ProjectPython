@@ -1,18 +1,21 @@
-#виртуальное окружение
-venv/
-.venv/
-env/
-
-#база данных
-*.sqlite3
-
-# ключ
-.env
-
-#кэш
+# Python compilation
 pycache/
-*.pyc
+*.py[cod]
+*$py.class
 
-#системные файлы
+# Django specific
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+venv/
+env/
+.env
+.venv/
+
+# IDE specific
+.idea/
+.vscode/
+*.swp
 .DS_Store
-Thumbs.db
