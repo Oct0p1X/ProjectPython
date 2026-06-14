@@ -1,0 +1,23 @@
+{% extends "analytics/base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Аналитика по товару: {{ product.title }}</h2>
+                <p class="text-muted">Артикул WB: <strong>{{ product.nm_id }}</strong> | Ваш порог: <strong>{{ product.min_acceptable_price }} руб.</strong></p>
+                <hr>
+                
+                {% if error %}
+                    <div class="alert alert-warning">{{ error }}</div>
+                {% elif chart %}
+                    <div class="text-center">
+                        <img src="data:image/png;base64,{{ chart }}" alt="График динамики цен" class="img-fluid rounded">
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
