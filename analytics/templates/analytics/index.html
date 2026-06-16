@@ -1,0 +1,26 @@
+{% extends 'analytics/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Дашборд продавца</h2>
+    <p class="text-muted">Список ваших отслеживаемых товаров на Wildberries.</p>
+
+    <div class="list-group">
+        {% for product in products %}
+            <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                <div>
+                    <h5 class="mb-1">{{ product.title }}</h5>
+                    <small class="text-muted">Артикул WB: <strong>{{ product.nm_id }}</strong> | Ваш критический порог: <strong>{{ product.min_acceptable_price }} руб.</strong></small>
+                </div>
+                <a href="{% url 'chart' product.id %}" class="btn btn-primary btn-sm">
+                    Посмотреть график
+                </a>
+            </div>
+        {% empty %}
+            <div class="alert alert-warning" role="alert">
+                У вас пока нет добавленных товаров. Перейдите в панель администратора, чтобы добавить первый артикул.
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

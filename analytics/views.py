@@ -20,14 +20,11 @@ def generate_price_chart(request, product_id):
     if not history:
         #Если данных нет возвращаем простой шаблон с сообщением
         return render(request, 'analytics/chart.html', {'product': product, 'chart': None, 'error': 'Нет данных для построения графика'})
-
     #передаем данные в DataFrame
     df = pd.DataFrame(list(history))
-    
     #сортировка по времени
     df['checked_at'] = pd.to_datetime(df['checked_at'])
     df = df.sort_values(by='checked_at')
-    
     #настройка графиков
     plt.switch_backend('AGG') #отключаем интерактивный режим
     plt.figure(figsize=(10, 5))
@@ -50,7 +47,7 @@ def generate_price_chart(request, product_id):
     plt.gca().xaxis.set_major_formatter(DateFormatter('%d-%m %H:%M'))
     plt.gcf().autofmt_xdate()
 
-    #Сохранение графика в строку base64 для передачи в HTML
+    #Сохранение графика в строку base64 для передачи в html
     buffer = io.BytesIO()
     plt.savefig(buffer, format='png')
     buffer.seek(0)
@@ -59,5 +56,11 @@ def generate_price_chart(request, product_id):
     
     plt.close()
 
-    #возвращаем шаблон передавая в него сгенерированный URI картинки
+    #возвращаем шаблон передавая в него сгенерированный uri картинки
     return render(request, 'analytics/chart.html', {'product': product, 'chart': uri})
+
+def index(request):
+    
+    products = Product.objects.all()# доставем все тоавары из базы данных
+    return render(request, 'analytics/index.html', {'products': products})
+    
