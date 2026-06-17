@@ -1,30 +1,25 @@
 import requests
 
 def get_wb_product_data(nm_id):
-    #Публичный api WB для получения данных по артикулу
+    #публичный api Wildberries для получения цен
     url = f"https://card.wb.ru/cards/v1/detail?appType=1&curr=rub&dest=-1257786&nm={nm_id}"
-    
     try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
+        response = requests.get(url, timeout=5)
         data = response.json()
         
-        # Проверка вернул ли маркетплейс данные о товаре
-        if data.get('data') and data['data'].get('products'):
+        if data.get('data', {}).get('products'):
             product = data['data']['products'][0]
-            
-            # В API WB цены хранятся с двумя лишними нулями на конце (копейки), поэтому делим на 100
-            price_before = product.get('priceU', 0) / 100
-            price_discount = product.get('salePriceU', 0) / 100
+            #цены в api Wildberries умножены на 100 поэтому делим
+            price_with_discount = product.get('salePriceU', 0) / 100
+            price_before_discount = product.get('priceU', 0) / 100
+            name = product.get('name', 'Неизвестный товар')
             
             return {
-                'success': True,
-                'name': product.get('name', 'Неизвестно'),
-                'brand': product.get('brand', 'Неизвестно'),
-                'price_before_discount': price_before,
-                'price_with_discount': price_discount
+                'price_with_discount': price_with_discount,
+                'price_before_discount': price_before_discount,
+                'name': name
             }
-        return {'success': False, 'error': 'Товар не найден'}
+    except Exception as e:
+        print(f"Ошибка парсинга артикула {nm_id}: {e}")
         
-    except requests.RequestException as e:
-        return {'success': False, 'error': f'Ошибка соединения с API: {e}'}
+    return None
