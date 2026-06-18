@@ -42,4 +42,4 @@
 	6) Откройте проект в браузере:
   		Перейдите по ссылке: http://127.0.0.1:8000/
 
-4. Ссылка на сайт проекта:https://oct0p1x.pythonanywhere.com/
+4. Ссылка на сайт проекта:https://DmitriyMahrov.pythonanywhere.com/
