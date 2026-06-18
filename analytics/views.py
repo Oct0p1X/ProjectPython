@@ -7,35 +7,44 @@ from matplotlib.dates import DateFormatter
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Product, CompetitorPriceHistory
-from .forms import ProductForm
+from .forms import ProductForm, CompetitorPriceForm
 from .services import get_wb_product_data
 
 
 @login_required
 def index(request):
+    products = Product.objects.filter(user=request.user)
+    
+    product_form = ProductForm()
+    competitor_form = CompetitorPriceForm()
 
     if request.method == 'POST':
-        form = ProductForm(request.POST)
-        if form.is_valid():
-            product = form.save(commit=False)
-            product.user = request.user
-            
-            #автоматический сбор названия и цены через API по введенному артикулу
-            api_data = get_wb_product_data(product.nm_id)
-            if api_data:
-                product.title = api_data.get('name', 'Неизвестный товар')
-                product.my_current_price = api_data.get('price_with_discount', 0)
-            else:
-                product.title = "Товар не найден"
-                product.my_current_price = 0
-                
-            product.save()
-            return redirect('analytics:index')
-    else:
-        form = ProductForm()
+        #пользователь добавляет свой новый товар
+        if 'add_product' in request.POST:
+            product_form = ProductForm(request.POST)
+            if product_form.is_valid():
+                product = product_form.save(commit=False)
+                product.user = request.user
+                product.save()
+                return redirect('analytics:index')
 
-    products = Product.objects.filter(user=request.user)
-    return render(request, 'analytics/index.html', {'products': products, 'form': form})
+        #пользователь добавляет конкурента к существующему товару
+        elif 'add_competitor' in request.POST:
+            competitor_form = CompetitorPriceForm(request.POST)
+            product_id = request.POST.get('product_id') 
+            
+            if competitor_form.is_valid() and product_id:
+                competitor = competitor_form.save(commit=False)
+                competitor.product = get_object_or_404(Product, id=product_id, user=request.user)
+                competitor.save()
+                return redirect('analytics:index')
+
+    context = {
+        'products': products,
+        'product_form': product_form,
+        'competitor_form': competitor_form,
+    }
+    return render(request, 'analytics/index.html', context)
 
 @login_required
 def generate_price_chart(request, product_id):

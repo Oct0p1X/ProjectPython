@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import Product, CompetitorPriceHistory, DumpingAlert
 
-@admin.register(Product)#Настройка параметров отображения
+
+@admin.register(Product)#настройка параметров отображения
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('title', 'nm_id', 'my_current_price', 'min_acceptable_price', 'user')
     search_fields = ('title', 'nm_id')

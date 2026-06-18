@@ -3,10 +3,7 @@ from .models import Product, CompetitorPriceHistory, DumpingAlert
 from .services import get_wb_product_data
 
 def run_competitor_analysis(product):
-    """
-    Функция берет товар пользователя, извлекает артикулы конкурентов, 
-    опрашивает их цены через API и фиксирует демпинг.
-    """
+
     if not product.target_competitor_urls:
         return
 
