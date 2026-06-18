@@ -36,6 +36,22 @@
                     <p class="mb-1">Порог демпинга: <strong>{{ product.min_acceptable_price }} руб.</strong></p>
                     <p class="mb-3">Погрешность: <strong>{{ product.tolerance_percent }}%</strong></p>
 
+                    <h6 class="text-secondary mt-3">Отслеживаемые конкуренты:</h6>
+                    {% if product.competitorpricehistory_set.all %}
+                        <ul class="list-group mb-3">
+                        {% for comp in product.competitorpricehistory_set.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-2">
+                                <div>
+                                    <small>Арт: <strong>{{ comp.competitor_nm_id }}</strong></small> | 
+                                    <small>Цена: <strong>{{ comp.price_with_discount }} руб.</strong></small>
+                                </div>
+                                <a href="{% url 'analytics:edit_competitor' comp.id %}" class="btn btn-sm btn-outline-primary">Изменить</a>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted small mb-3">Конкуренты еще не добавлены.</p>
+                    {% endif %}
                     <div class="p-3 mb-3 bg-light border rounded">
                         <h6 class="text-secondary">Зафиксировать цену конкурента</h6>
                         <form method="post">

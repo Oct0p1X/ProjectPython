@@ -48,44 +48,30 @@ def index(request):
 
 @login_required
 def generate_price_chart(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    
-    #история цен конкурентов
+    product = get_object_or_404(Product, id=product_id, user=request.user)
     history = CompetitorPriceHistory.objects.filter(product=product).order_by('checked_at')
-    
-    #если конкурентов еще не добавляли
+
+    #защита от пустой базы
     if not history.exists():
         return render(request, 'analytics/chart.html', {
             'product': product, 
-            'error': 'История цен конкурентов пока пуста.'
+            'chart_uri': None,
+            'dumping_info': []
         })
 
-    #передаем данные в pandas
-    df = pd.DataFrame(list(history.values('competitor_nm_id', 'price_with_discount', 'checked_at')))
-    
-    #если датафрейм почему то пуст
-    if df.empty:
-        return render(request, 'analytics/chart.html', {
-            'product': product, 
-            'error': 'Не удалось обработать данные для графика.'
-        })
-
+    #Генерируем график
+    df = pd.DataFrame(list(history.values('competitor_name', 'competitor_nm_id', 'price_with_discount', 'checked_at')))
     plt.figure(figsize=(10, 5))
     
     for name, group in df.groupby('competitor_nm_id'):
-        plt.plot(group['checked_at'], group['price_with_discount'], marker='o', label=f'Артикул {name}')
+        plt.plot(group['checked_at'], group['price_with_discount'], marker='o', label=f'Артикул: {name}')
 
-    if product.min_acceptable_price:
-        plt.axhline(y=product.min_acceptable_price, color='r', linestyle='--', label='Мой минимум (порог)')
-
-    #оформление графика
-    plt.title(f'Динамика демпинга: {product.title}')
-    #plt.xlabel('Дата фиксации')
-    plt.ylabel('Цена конкурента (руб.)')
+    plt.axhline(y=float(product.min_acceptable_price), color='r', linestyle='--', label='Мин. порог цены')
+    plt.title(f'Динамика цен для {product.title}')
+    plt.xlabel('Дата')
+    plt.ylabel('Цена (руб)')
     plt.legend()
     plt.grid(True)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
 
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
@@ -94,4 +80,39 @@ def generate_price_chart(request, product_id):
     uri = urllib.parse.quote(string)
     plt.close()
 
-    return render(request, 'analytics/chart.html', {'product': product, 'chart': uri})
+    #поиск демпингующих конкурентов
+    dumping_info = []
+    tolerance_val = product.min_acceptable_price * (product.tolerance_percent / 100)
+    threshold = product.min_acceptable_price - tolerance_val
+
+    latest_history = CompetitorPriceHistory.objects.filter(product=product).order_by('-checked_at')
+    processed_skus = set()
+
+    for record in latest_history:
+        if record.competitor_nm_id not in processed_skus:
+            processed_skus.add(record.competitor_nm_id)
+            if record.price_with_discount < threshold:
+                diff = product.my_current_price - record.price_with_discount
+                dumping_info.append({
+                    'sku': record.competitor_nm_id,
+                    'price': record.price_with_discount,
+                    'diff': diff
+                })
+
+    return render(request, 'analytics/chart.html', {
+        'product': product, 
+        'chart_uri': uri,
+        'dumping_info': dumping_info  
+    })
+def edit_competitor(request, pk):
+    competitor = get_object_or_404(CompetitorPriceHistory, id=pk, product__user=request.user)
+    
+    if request.method == 'POST':
+        form = CompetitorPriceForm(request.POST, instance=competitor)
+        if form.is_valid():
+            form.save()
+            return redirect('analytics:index')
+    else:
+        form = CompetitorPriceForm(instance=competitor)
+        
+    return render(request, 'analytics/edit_competitor.html', {'form': form, 'competitor': competitor})

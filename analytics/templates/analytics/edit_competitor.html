@@ -1,0 +1,16 @@
+{% extends 'analytics/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Редактирование цены конкурента</h2>
+    <div class="card shadow p-4 mt-3">
+        <p><strong>Товар:</strong> {{ competitor.product.title }} (Артикул: {{ competitor.product.nm_id }})</p>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-success mt-2">Сохранить изменения</button>
+            <a href="{% url 'analytics:index' %}" class="btn btn-secondary mt-2 ms-2">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
