@@ -1,0 +1,27 @@
+{% extends 'analytics/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4>Редактировать товар {{ product.title }}</h4>
+        </div>
+
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+
+                <button class="btn btn-success">
+                    Сохранить
+                </button>
+
+                <a href="{% url 'analytics:index' %}"
+                   class="btn btn-secondary">
+                    Отмена
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

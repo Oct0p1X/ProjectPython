@@ -38,6 +38,19 @@ def index(request):
                 competitor.product = get_object_or_404(Product, id=product_id, user=request.user)
                 competitor.save()
                 return redirect('analytics:index')
+        elif 'update_competitor' in request.POST:
+            competitor_id = request.POST.get('competitor_id')
+            competitor = get_object_or_404(
+                CompetitorPriceHistory,
+                id=competitor_id,
+                 product__user=request.user
+            )
+
+            competitor.competitor_nm_id = request.POST.get('competitor_nm_id')
+            competitor.price_with_discount = request.POST.get('price_with_discount')
+            competitor.save()
+
+            return redirect('analytics:index')
 
     context = {
         'products': products,
@@ -104,14 +117,14 @@ def generate_price_chart(request, product_id):
         'chart_uri': uri,
         'dumping_info': dumping_info  
     })
-def edit_competitor(request, pk):
-    competitor = get_object_or_404(CompetitorPriceHistory, id=pk, product__user=request.user)
+def edit_competitor(request, comp_id):
+    competitor = get_object_or_404(CompetitorPriceHistory, id=comp_id)
     
     if request.method == 'POST':
         form = CompetitorPriceForm(request.POST, instance=competitor)
         if form.is_valid():
             form.save()
-            return redirect('analytics:index')
+            return redirect('analytics:index') #
     else:
         form = CompetitorPriceForm(instance=competitor)
         

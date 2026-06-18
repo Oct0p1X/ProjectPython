@@ -12,7 +12,7 @@
             <form method="post">
                 {% csrf_token %}
                 {{ product_form.as_p }}
-                
+
                 <button type="submit" name="add_product" class="btn btn-success">
                     Добавить мой товар
                 </button>
@@ -28,53 +28,104 @@
         <div class="col-md-6 mb-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-header bg-light">
-                    <strong>{{ product.title }}</strong> 
+                    <strong>{{ product.title }}</strong>
                     <span class="text-muted">(Артикул: {{ product.nm_id }})</span>
                 </div>
+
                 <div class="card-body">
                     <p class="mb-1">Моя цена: <strong>{{ product.my_current_price }} руб.</strong></p>
                     <p class="mb-1">Порог демпинга: <strong>{{ product.min_acceptable_price }} руб.</strong></p>
                     <p class="mb-3">Погрешность: <strong>{{ product.tolerance_percent }}%</strong></p>
 
                     <h6 class="text-secondary mt-3">Отслеживаемые конкуренты:</h6>
-                    {% if product.competitorpricehistory_set.all %}
+
+                    {% if product.price_history.all %}
                         <ul class="list-group mb-3">
-                        {% for comp in product.competitorpricehistory_set.all %}
-                            <li class="list-group-item d-flex justify-content-between align-items-center p-2">
-                                <div>
-                                    <small>Арт: <strong>{{ comp.competitor_nm_id }}</strong></small> | 
-                                    <small>Цена: <strong>{{ comp.price_with_discount }} руб.</strong></small>
-                                </div>
-                                <a href="{% url 'analytics:edit_competitor' comp.id %}" class="btn btn-sm btn-outline-primary">Изменить</a>
+
+                        {% for comp in product.price_history.all %}
+                            <li class="list-group-item">
+                                <form method="post">
+                                    {% csrf_token %}
+
+                                    <input type="hidden"
+                                           name="competitor_id"
+                                           value="{{ comp.id }}">
+
+                                    <div class="row g-2">
+
+                                        <div class="col-md-5">
+                                            <label class="form-label small">
+                                                Артикул конкурента
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="competitor_nm_id"
+                                                value="{{ comp.competitor_nm_id }}"
+                                                class="form-control form-control-sm">
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label class="form-label small">
+                                                Цена
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                name="price_with_discount"
+                                                value="{{ comp.price_with_discount }}"
+                                                class="form-control form-control-sm">
+                                        </div>
+
+                                        <div class="col-md-3 d-flex align-items-end">
+                                            <button
+                                                type="submit"
+                                                name="update_competitor"
+                                                class="btn btn-success btn-sm w-100">
+                                                Сохранить
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
                             </li>
                         {% endfor %}
+
                         </ul>
                     {% else %}
-                        <p class="text-muted small mb-3">Конкуренты еще не добавлены.</p>
+                        <p class="text-muted small mb-3">
+                            Конкуренты еще не добавлены.
+                        </p>
                     {% endif %}
+
                     <div class="p-3 mb-3 bg-light border rounded">
                         <h6 class="text-secondary">Зафиксировать цену конкурента</h6>
+
                         <form method="post">
                             {% csrf_token %}
                             <input type="hidden" name="product_id" value="{{ product.id }}">
-                            
+
                             {{ competitor_form.as_p }}
-                            
-                            <button type="submit" name="add_competitor" class="btn btn-outline-primary btn-sm w-100">
+
+                            <button type="submit"
+                                    name="add_competitor"
+                                    class="btn btn-outline-primary btn-sm w-100">
                                 Сохранить в историю
                             </button>
                         </form>
                     </div>
 
-                    <a href="{% url 'analytics:chart' product.id %}" class="btn btn-primary w-100">
+                    <a href="{% url 'analytics:chart' product.id %}"
+                       class="btn btn-primary w-100">
                         Посмотреть графики и аналитику
                     </a>
                 </div>
             </div>
         </div>
+
         {% empty %}
         <div class="col-12">
-            <div class="alert alert-info">Вы еще не добавили ни одного товара на мониторинг.</div>
+            <div class="alert alert-info">
+                Вы еще не добавили ни одного товара на мониторинг.
+            </div>
         </div>
         {% endfor %}
     </div>
