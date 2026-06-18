@@ -48,45 +48,45 @@ def index(request):
 
 @login_required
 def generate_price_chart(request, product_id):
-    product = get_object_or_404(Product, id=product_id, user=request.user)
+    product = get_object_or_404(Product, id=product_id)
+    
+    #история цен конкурентов
     history = CompetitorPriceHistory.objects.filter(product=product).order_by('checked_at')
-
+    
+    #если конкурентов еще не добавляли
     if not history.exists():
-        # Если истории еще нет, выводим шаблон с сообщением
-        return render(request, 'analytics/chart.html', {'product': product, 'error': 'Нет данных для графика.'})
-
-    data = []
-    for h in history:
-        data.append({
-            'date': h.checked_at,
-            'price': h.price_with_discount,
-            'competitor_name': h.competitor_name
+        return render(request, 'analytics/chart.html', {
+            'product': product, 
+            'error': 'История цен конкурентов пока пуста.'
         })
-    df = pd.DataFrame(data)
 
-    #генерация графиков
+    #передаем данные в pandas
+    df = pd.DataFrame(list(history.values('competitor_nm_id', 'price_with_discount', 'checked_at')))
+    
+    #если датафрейм почему то пуст
+    if df.empty:
+        return render(request, 'analytics/chart.html', {
+            'product': product, 
+            'error': 'Не удалось обработать данные для графика.'
+        })
+
     plt.figure(figsize=(10, 5))
     
-    #разделяем данные, чтобы у каждого конкурента была своя линия
-    for name, group in df.groupby('competitor_name'):
-        plt.plot(group['date'], group['price'], marker='o', label=name)
+    for name, group in df.groupby('competitor_nm_id'):
+        plt.plot(group['checked_at'], group['price_with_discount'], marker='o', label=f'Артикул {name}')
 
-    #рисуем красную пунктирную линию визуализация критического порога
-    plt.axhline(y=float(product.min_acceptable_price), color='r', linestyle='--', label='Мин. допустимая цена')
+    if product.min_acceptable_price:
+        plt.axhline(y=product.min_acceptable_price, color='r', linestyle='--', label='Мой минимум (порог)')
 
-    plt.title(f'Динамика цен конкурентов: {product.title}')
-    plt.xlabel('Дата и время')
-    plt.ylabel('Цена (руб.)')
+    #оформление графика
+    plt.title(f'Динамика демпинга: {product.title}')
+    #plt.xlabel('Дата фиксации')
+    plt.ylabel('Цена конкурента (руб.)')
     plt.legend()
     plt.grid(True)
-    
-    #форматирование дат на оси X
-    ax = plt.gca()
-    ax.xaxis.set_major_formatter(DateFormatter('%d.%m %H:%M'))
     plt.xticks(rotation=45)
     plt.tight_layout()
 
-    #конвертация изображения
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
@@ -94,4 +94,4 @@ def generate_price_chart(request, product_id):
     uri = urllib.parse.quote(string)
     plt.close()
 
-    return render(request, 'analytics/chart.html', {'product': product, 'chart_uri': uri})
+    return render(request, 'analytics/chart.html', {'product': product, 'chart': uri})
